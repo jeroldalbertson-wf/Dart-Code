@@ -117,6 +117,27 @@ export class EditCommands implements vs.Disposable {
 		}
 		const applyEditsSequentially = hasProblematicEdits;
 
+		// VS Code expects offsets to be based on the original document, but the analysis server provides
+		// them assuming all previous edits have already been made. This means if the server provides us a
+		// set of edits where any edits offset is *equal to or greater than* a previous edit, it will do the wrong thing.
+		// If this happens; we will fall back to sequential edits and write a warning.
+		let hasProblematicEdits = false;
+		const priorEdits: as.SourceEdit[] = [];
+		outer_loop:
+		for (const edit of change.edits) {
+			for (const e of edit.edits) {
+				hasProblematicEdits = !!priorEdits.find((pe) => pe.offset <= e.offset);
+				if (hasProblematicEdits)
+					break outer_loop;
+				priorEdits.push(e);
+			}
+		}
+
+		if (hasProblematicEdits) {
+			console.warn("Falling back to sequential edits due to overlapping edits in server.");
+		}
+		const applyEditsSequentially = hasProblematicEdits;
+
 		// Otherwise, just make all the edits without the snippets.
 		let changes = applyEditsSequentially ? undefined : new vs.WorkspaceEdit();
 
