@@ -2,7 +2,7 @@ import * as child_process from "child_process";
 import * as fs from "fs";
 import * as _ from "lodash";
 import * as path from "path";
-import { DebugSession, Event, InitializedEvent, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ThreadEvent } from "vscode-debugadapter";
+import { BreakpointEvent, DebugSession, Event, InitializedEvent, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ThreadEvent } from "vscode-debugadapter";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { logError } from "../utils";
 import { DebuggerResult, ObservatoryConnection, VM, VMBreakpoint, VMErrorRef, VMEvent, VMFrame, VMInstance, VMInstanceRef, VMIsolate, VMIsolateRef, VMLibraryRef, VMMapEntry, VMObj, VMResponse, VMScript, VMScriptRef, VMSentinel, VMSourceLocation, VMStack } from "./dart_debug_protocol";
@@ -347,10 +347,7 @@ export class DartDebugSession extends DebugSession {
 				const result = await this.threadManager.setBreakpoints(uri, breakpoints);
 				const bpResponse: DebugProtocol.Breakpoint[] = [];
 				for (const bp of result) {
-					bpResponse.push({
-						id: bp.breakpointNumber,
-						verified: bp.resolved,
-					});
+					bpResponse.push(this.breakpointFromVm(bp));
 				}
 
 				response.body = { breakpoints: bpResponse };
@@ -359,6 +356,13 @@ export class DartDebugSession extends DebugSession {
 				this.errorResponse(response, `${error}`);
 			}
 		}));
+	}
+
+	private breakpointFromVm(bp: VMBreakpoint): DebugProtocol.Breakpoint {
+		return {
+			id: bp.breakpointNumber,
+			verified: bp.resolved,
+		};
 	}
 
 	/***
@@ -831,7 +835,7 @@ export class DartDebugSession extends DebugSession {
 		if (kind.startsWith("Pause")) {
 			this.handlePauseEvent(event);
 		} else if (kind === "BreakpointResolved") {
-			console.log(`Resolving breakpoint: ${JSON.stringify(event)}`);
+			this.sendEvent(new BreakpointEvent("changed", this.breakpointFromVm(event.breakpoint)));
 		}
 	}
 
