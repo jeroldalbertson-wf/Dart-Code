@@ -75,7 +75,7 @@ export function formatPathForVm(file: string): string {
 	if (file.startsWith("dart:"))
 		return file;
 	else
-		return `/${encodeURI(file)}`;
+		return `file:///${encodeURI(file)}`;
 }
 
 export function forceWindowsDriveLetterToUppercase(p: string): string {
