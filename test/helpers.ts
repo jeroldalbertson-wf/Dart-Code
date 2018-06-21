@@ -181,7 +181,7 @@ afterEach("run deferred functions", async function () {
 	let firstError: any;
 	for (const d of _.concat(deferredItems, deferredToLastItems)) {
 		try {
-			await d(this.currentTest && this.currentTest.state);
+			await d(this.currentTest ? this.currentTest.state : undefined);
 		} catch (e) {
 			logError(`Error running deferred function: ${e}`);
 			// TODO: Add named for deferred functions instead...
@@ -519,11 +519,7 @@ async function getResolvedDebugConfiguration(extraConfiguration?: { [key: string
 		request: "launch",
 		type: "dart",
 	}, extraConfiguration);
-<<<<<<< HEAD
 	return await extApi.debugProvider.resolveDebugConfiguration(vs.workspace.workspaceFolders[0], debugConfig);
-=======
-	return await ext.exports.debugProvider.resolveDebugConfiguration(vs.workspace.workspaceFolders![0], debugConfig);
->>>>>>> Fix some strictNullChecks issues
 }
 
 export async function getLaunchConfiguration(script?: vs.Uri | string, extraConfiguration?: { [key: string]: any }): Promise<vs.DebugConfiguration> {
