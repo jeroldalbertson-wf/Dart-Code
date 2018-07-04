@@ -50,7 +50,7 @@ import { analyzerSnapshotPath, dartVMPath, findSdks, flutterPath, handleMissingS
 import { showUserPrompts } from "./user_prompts";
 import * as util from "./utils";
 import { fsPath } from "./utils";
-import { addToLogHeader, clearLogHeader, log, LogCategory, logError, logTo } from "./utils/log";
+import { LogCategory, addToLogHeader, clearLogHeader, log, logError, logTo } from "./utils/log";
 import { DartPackagesProvider } from "./views/packages_view";
 import { TestResultsProvider } from "./views/test_view";
 
@@ -59,6 +59,7 @@ const HTML_MODE: vs.DocumentFilter[] = [{ language: "html", scheme: "file" }];
 
 const DART_PROJECT_LOADED = "dart-code:dartProjectLoaded";
 const FLUTTER_PROJECT_LOADED = "dart-code:flutterProjectLoaded";
+export const FLUTTER_SUPPORTS_ATTACH = "dart-code:flutterSupportsAttach";
 const DART_PLATFORM_NAME = "dart-code:platformName";
 export const SERVICE_EXTENSION_CONTEXT_PREFIX = "dart-code:serviceExtension.";
 export let extensionPath: string = null;
@@ -460,6 +461,7 @@ function getSettingsThatRequireRestart() {
 
 export async function deactivate(isRestart: boolean = false): Promise<void> {
 	setCommandVisiblity(false, null);
+	vs.commands.executeCommand("setContext", FLUTTER_SUPPORTS_ATTACH, false);
 	if (!isRestart) {
 		await analytics.logExtensionShutdown();
 		if (extensionLogger)

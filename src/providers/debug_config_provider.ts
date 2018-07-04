@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as net from "net";
 import * as path from "path";
 import * as vs from "vscode";
-import { CancellationToken, DebugConfiguration, DebugConfigurationProvider, ProviderResult, Uri, window, workspace, WorkspaceFolder } from "vscode";
+import { CancellationToken, DebugConfiguration, DebugConfigurationProvider, ProviderResult, Uri, WorkspaceFolder, window, workspace } from "vscode";
 import { DebugSession } from "vscode-debugadapter";
 import { Analytics } from "../analytics";
 import { config } from "../config";
@@ -14,7 +14,7 @@ import { FlutterLaunchRequestArguments, forceWindowsDriveLetterToUppercase, isWi
 import { FlutterDeviceManager } from "../flutter/device_manager";
 import { locateBestProjectRoot } from "../project";
 import { dartPubPath, dartVMPath, flutterPath } from "../sdk/utils";
-import { fsPath, isFlutterProjectFolder, isFlutterWorkspaceFolder, isInsideFolderNamed, isTestFile, ProjectType, Sdks, supportsPubRunTest } from "../utils";
+import { ProjectType, Sdks, fsPath, isFlutterProjectFolder, isFlutterWorkspaceFolder, isInsideFolderNamed, isTestFile, supportsPubRunTest } from "../utils";
 import { TestResultsProvider } from "../views/test_view";
 
 export class DebugConfigProvider implements DebugConfigurationProvider {
@@ -79,7 +79,7 @@ export class DebugConfigProvider implements DebugConfigurationProvider {
 				window.showInformationMessage("Set the 'program' value in your launch config (eg 'bin/main.dart') then launch again");
 				return debugConfig;
 			}
-		} else {
+		} else if (!debugConfig.previewFlutterAttach) {
 			// For attaching, the Observatory address must be specified. If it's not provided already, prompt for it.
 			debugConfig.observatoryUri = await this.getObservatoryUri(debugConfig.observatoryUri);
 
@@ -109,9 +109,7 @@ export class DebugConfigProvider implements DebugConfigurationProvider {
 		if (debugConfig.program && debugConfig.cwd && !path.isAbsolute(debugConfig.program))
 			debugConfig.program = path.join(debugConfig.cwd, debugConfig.program);
 
-		// Disable Flutter mode for attach.
-		// TODO: Update FlutterDebugSession to understand attach mode, and remove this limitation.
-		const isFlutter = !isAttachRequest && this.sdks.projectType !== ProjectType.Dart
+		const isFlutter = (!isAttachRequest || debugConfig.previewFlutterAttach) && this.sdks.projectType !== ProjectType.Dart
 			&& debugConfig.cwd && isFlutterProjectFolder(debugConfig.cwd as string);
 		const isTest = isFullTestRun || (debugConfig.program && isTestFile(debugConfig.program as string));
 		const canPubRunTest = isTest && supportsPubRunTest(debugConfig.cwd as string, debugConfig.program as string);
