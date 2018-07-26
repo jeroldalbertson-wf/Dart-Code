@@ -2,6 +2,7 @@ cache:
   - node_modules
   - '%APPDATA%\npm-cache'
   - '%APPDATA%\Pub\Cache'
+  - 'with spaces\flutter'
 
 environment:
   CHAT_WEBHOOK_PATH:
@@ -47,12 +48,21 @@ install:
          $env:DART_CHANNEL="dev"
          $env:FLUTTER_BRANCH="master"
        }
-  - ps: mkdir "with spaces"
+  - ps: mkdir "with spaces" -force
   - ps: cd "with spaces"
-  - echo Downloading Dart and Flutter...
+  - echo Downloading Dart...
   - ps: Invoke-WebRequest "https://storage.googleapis.com/dart-archive/channels/${env:DART_CHANNEL}/release/latest/sdk/dartsdk-windows-x64-release.zip" -OutFile "dart.zip"
   - ps: 7z.exe x dart.zip | out-null
-  - git clone -b %FLUTTER_BRANCH% https://github.com/flutter/flutter.git
+  - echo Downloading Flutter...
+  - ps: mkdir "flutter" -force
+  - cd flutter
+  - ps: mkdir ".git" -force
+  - ps: rm -r -fo ".git"
+  - git init
+  - git remote add origin https://github.com/flutter/flutter.git
+  - git fetch origin
+  - git reset --hard origin/$FLUTTER_BRANCH
+  - cd ..
   - ps: $env:FLUTTER_ROOT = "$pwd\flutter"
   - ps: $env:DART_SDK_PATHS = "$pwd\dart-sdk\bin;$pwd\flutter\bin"
   - echo Configuring Dart and Flutter...

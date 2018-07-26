@@ -57,22 +57,22 @@ before_install:
   - echo Setting variables...
   - if [[ $ONLY_RUN_DART_VERSION == "STABLE" ]]; then
       export DART_CHANNEL=stable;
-      export FLUTTER_BRANCH=debug-update-package-timing;
+      export FLUTTER_BRANCH=beta;
     else
       export DART_CHANNEL=dev;
-      export FLUTTER_BRANCH=debug-update-package-timing;
+      export FLUTTER_BRANCH=master;
     fi
   - mkdir -p with\ spaces
   - cd with\ spaces
   - echo Downloading Dart...
   - curl https://storage.googleapis.com/dart-archive/channels/$DART_CHANNEL/release/latest/sdk/dartsdk-$DART_OS-x64-release.zip > dart-sdk.zip
   - unzip dart-sdk.zip > /dev/null
-  - echo Fetching latest Flutter...
+  - echo Downloading Flutter...
   - mkdir -p flutter/.git
   - rm -rf flutter/.git
   - cd flutter
   - git init
-  - git remote add origin https://github.com/DanTup/flutter.git
+  - git remote add origin https://github.com/flutter/flutter.git
   - git fetch origin
   - git reset --hard origin/$FLUTTER_BRANCH
   - cd ..
@@ -80,8 +80,6 @@ before_install:
   - export DART_SDK_PATHS=`pwd`/dart-sdk/bin:`pwd`/flutter/bin
   - echo Configuring Dart and Flutter...
   - flutter/bin/flutter config --no-analytics
-  - flutter/bin/flutter update-packages
-  - flutter/bin/flutter update-packages
   - flutter/bin/flutter update-packages
   - dart-sdk/bin/dart --version
   - flutter/bin/flutter --version
@@ -112,8 +110,10 @@ script:
       travis_result 1;
     fi;
 
-after_script:
+before_cache:
   - rm -rf flutter/.git
+
+after_script:
   - if [ $TRAVIS_PULL_REQUEST = "false" ]; then
       dpl --provider=s3 --bucket="test-results.dartcode.org" --skip_cleanup=true --local-dir=".test_results" --upload-dir="$TRAVIS_BRANCH/$TRAVIS_COMMIT/$TRAVIS_OS_NAME" --acl=public_read --default_text_charset=utf-8;
       dpl --provider=s3 --bucket="test-results.dartcode.org" --skip_cleanup=true --local-dir=".dart_code_test_logs" --upload-dir="logs/$TRAVIS_BRANCH/$TRAVIS_COMMIT/$TRAVIS_OS_NAME" --acl=public_read --default_text_charset=utf-8;
