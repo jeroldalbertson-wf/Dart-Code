@@ -1,9 +1,10 @@
+import * as fs from "fs";
 import * as vs from "vscode";
 import * as as from "../analysis/analysis_server_types";
 import { Analyzer } from "../analysis/analyzer";
 import * as editors from "../editors";
 import { fsPath } from "../utils";
-import { logWarn } from "../utils/log";
+import { logError, logWarn } from "../utils/log";
 
 export class EditCommands implements vs.Disposable {
 	private commands: vs.Disposable[] = [];
@@ -141,17 +142,28 @@ export class EditCommands implements vs.Disposable {
 		let changes = applyEditsSequentially ? undefined : new vs.WorkspaceEdit();
 
 		for (const edit of change.edits) {
+			const uri = vs.Uri.file(edit.file);
+			// We can only create files with edits that are at 0/0 because we can't open the document if it doesn't exist.
+			// If we create the file ourselves, it won't go into the single undo buffer.
+			if (!fs.existsSync(edit.file) && edit.edits.find((e) => e.offset !== 1 || e.length !== 0)) {
+				logError(`Unable to edit file ${edit.file} because it does not exist and had an edit that was not the start of the file`);
+				vs.window.showErrorMessage(`Enable to edit file ${edit.file} because it does not exist and had an edit that was not the start of the file`);
+				continue;
+			}
+			const document = fs.existsSync(edit.file) ? await vs.workspace.openTextDocument(uri) : undefined;
+			changes.createFile(uri, { ignoreIfExists: true });
 			for (const e of edit.edits) {
-				const uri = vs.Uri.file(edit.file);
-				const document = await vs.workspace.openTextDocument(uri);
 				if (applyEditsSequentially)
 					changes = new vs.WorkspaceEdit();
-				changes.replace(
-					vs.Uri.file(edit.file),
-					new vs.Range(
+				const range = document
+					? new vs.Range(
 						document.positionAt(e.offset),
 						document.positionAt(e.offset + e.length),
-					),
+					)
+					: new vs.Range(new vs.Position(0, 0), new vs.Position(0, 0));
+				changes.replace(
+					uri,
+					range,
 					e.replacement,
 				);
 				if (applyEditsSequentially) {
@@ -162,9 +174,8 @@ export class EditCommands implements vs.Disposable {
 		}
 
 		// If we weren't applying sequentially
-		if (!applyEditsSequentially) {
+		if (!applyEditsSequentially)
 			await vs.workspace.applyEdit(changes);
-		}
 
 		// Set the cursor position.
 		if (change.selection) {
