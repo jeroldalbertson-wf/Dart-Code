@@ -61,7 +61,7 @@ install:
   - git init
   - git remote add origin https://github.com/flutter/flutter.git
   - git fetch origin
-  - git reset --hard origin/$FLUTTER_BRANCH
+  - git reset --hard origin/%FLUTTER_BRANCH%
   - cd ..
   - ps: $env:FLUTTER_ROOT = "$pwd\flutter"
   - ps: $env:DART_SDK_PATHS = "$pwd\dart-sdk\bin;$pwd\flutter\bin"
