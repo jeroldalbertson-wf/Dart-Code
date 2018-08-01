@@ -57,10 +57,10 @@ before_install:
   - echo Setting variables...
   - if [[ $ONLY_RUN_DART_VERSION == "STABLE" ]]; then
       export DART_CHANNEL=stable;
-      export FLUTTER_BRANCH=beta;
+      export FLUTTER_BRANCH=debug-update-package-timing;
     else
       export DART_CHANNEL=dev;
-      export FLUTTER_BRANCH=master;
+      export FLUTTER_BRANCH=debug-update-package-timing;
     fi
   - mkdir -p with\ spaces
   - cd with\ spaces
@@ -72,7 +72,7 @@ before_install:
   - rm -rf flutter/.git
   - cd flutter
   - git init
-  - git remote add origin https://github.com/flutter/flutter.git
+  - git remote add origin https://github.com/DanTup/flutter.git
   - git fetch origin
   - git reset --hard origin/$FLUTTER_BRANCH
   - cd ..
